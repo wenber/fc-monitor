@@ -1,15 +1,19 @@
 {
     "name": "fc-monitor",
-    "version": "0.0.1-alpha.1",
-    "contributors": [
+    "version": "0.0.1-alpha.2",
+    "maintainers": [
         {
             "name": "Leo Wang",
             "email": "wangkemiao@baidu.com"
         }
     ],
-    "dependencies": {},
+    "contributors": [],
+    "dependencies": {
+        "fc-core": "0.0.1-alpha.2",
+        "fc-storage": "0.0.1-alpha.2"
+    },
     "main": "main",
-    "description": "monitor封装库",
-    "homepage": "https://gitlab.com/fc-fe/fc-monitor",
-    "repository": "git://gitlab.com/fc-fe/fc-monitor"
+    "description": "FC monitor封装库",
+    "homepage": "https://github.com/fcfe/fc-monitor",
+    "repository": "git://github.com/fcfe/fc-monitor"
 }

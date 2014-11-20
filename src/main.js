@@ -1,10 +1,18 @@
 /**
- * @file fc-flag主入口文件
+ * @file fc-monitor 监控库 主入口文件
  * @author Leo Wang(wangkemiao@baidu.com)
  */
 
 define(function (require) {
-    var flag = {};
+    'use strict';
 
-    return flag;
+    /**
+     * fc-monitor 监控库
+     * @module monitor
+     */
+    var monitor = {
+        version: '0.0.1-alpha.2'
+    };
+
+    return monitor;
 });
