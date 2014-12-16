@@ -9,6 +9,7 @@ define(function (require, exports, module) {
     var _ = require('underscore');
 
     var exports = {
+        firstMark: 'performance_static_html_parse',
         loghost: '/nirvana/log/fclogimg.gif',
         threshold: 20,
         storageKey: 'fc-monitor-storage-key',

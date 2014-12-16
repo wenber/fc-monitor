@@ -8,6 +8,7 @@ define(function (require, exports, module) {
     var _ = require('underscore');
     var fc = require('fc-core');
     var logger = require('./logger');
+    var config = require('./config');
 
     var systemData = {
         eventId: fc.util.guid()
@@ -42,10 +43,9 @@ define(function (require, exports, module) {
         }
 
         var performanceData = {};
-        var startMarkName = prefix + '_' + itemKey + '_' + item.process[0];
         _.each(item.process, function (process) {
             var markName = prefix + '_' + itemKey + '_' + process;
-            window.performance.measure(itemKey, startMarkName, markName);
+            window.performance.measure(itemKey, config.firstMark, markName);
             var measure = [].slice.call(
                 window.performance.getEntriesByName(itemKey),
                 0
@@ -56,9 +56,9 @@ define(function (require, exports, module) {
             window.performance.getEntriesByName(itemKey),
             0
         ).pop();
+        performanceData[prefix + '_' + itemKey] = measure.duration;
 
         // clear marks
-        performanceData[prefix + '_' + itemKey] = measure.duration;
         _.each(item.process, function (process) {
             var markName = prefix + '_' + itemKey + '_' + process;
             window.performance.clearMarks(markName);
