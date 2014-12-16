@@ -4,18 +4,19 @@
  */
 
 define(function (require) {
+    'use strict';
 
+    var _ = require('underscore');
     var fc = require('fc-core');
-    var globalData = require('./globalData');
 
-    var config = require('../context/config/monitor');
-    var localStorage = require('fc-storage/localStorage');
+    var config = require('./config');
+    var globalData = require('./globalData');
+    var localStorage = require('fc-storage');
+    var recorder = require('./recorder');
 
     var lastTarget = 'PAGE_LOAD';
 
-    var logData = [];
-
-    var LOG_DATA_LENGTH_MAX = 13;
+    var queue = [];
 
     /**
      * logger定义
@@ -28,76 +29,77 @@ define(function (require) {
      * @param {string=} target 可选的监控数据的target字段，会覆盖data中的target
      */
     logger.log = function (data, target) {
-        var logInfo = fc.util.deepExtend({
-            timestamp: +(new Date())
-        }, data);
-
+        var logInfo = _.deepExtend({timestamp: +(new Date())}, data);
         if (target) {
             logInfo.target = target;
         }
         logInfo.lastTarget = lastTarget;
-
-        logData.push(logInfo);
-        if (logData.length >= LOG_DATA_LENGTH_MAX) {
-            logger.asyncDump();
-        }
         lastTarget = logInfo.target;
-    };
 
-    /**
-     * dump unsent log with setTimeout
-     * @param {Object} options dump options
-     */
-    logger.asyncDump = function (options) {
-        setTimeout(function () {
-            logger.dump(options);
-        }, 0);
+        var url = window.location.hash;
+        var path = url.split('~')[0].replace(/^#/, '') || '/';
+
+        logInfo.path = path;
+
+        if (recorder.pageInactived) {
+            logInfo.pageInactived = recorder.pageInactived;
+        }
+
+        queue.push(logInfo);
+        if (queue.length >= config.threshold) {
+            fc.setImmediate(function () {
+                logger.dump();
+            });
+        }
     };
 
     /**
      * dump unsent log
-     * @param {Object} options dump options
-     *     options.saveLocal 是否使用localStorage来存储未发送的数据
+     * @param {Object} options
+     *  options.method: dump method
+     *      'local': save log data to local storage;
+     *      'console' dump log data to console;
+     *      'loghost' dump log data to log server, default;
      */
     logger.dump = function (options) {
-        var toSend = fc.util.deepExtend({
-            timestamp: +(new Date())
-        }, globalData);
-        delete toSend.path;
+        options = options || {};
+        var toSend = _.deepExtend({timestamp: +(new Date())}, globalData);
+        toSend.logData = queue;
+        toSend.total = queue.length;
 
-        // 存储到localStorage的key，由globalData自动生成
-        // 如果想区分用户，则需要在初始化时指定globalData.storageKey为相应的区分key
-        var storageKey = globalData.storageKey;
-        var storage = localStorage.getItem(storageKey);
-        var unsentLog = storage.unsentLog || [];
+        var method = options.method || config.defaultMethod;
+        if (undefined === logger.dumpMethod[method]) {
+            method = config.defaultMethod;
+        }
+        if ('function' === typeof logger.dumpMethod[method]) {
+            logger.dumpMethod[method](toSend);
+            // clear log queue
+            queue.length = 0;
+        }
+    };
 
-        if (options && options.saveLocal) {
-            unsentLog = unsentLog.concat(logData);
-            localStorage.updateItem(storageKey, {
-                unsentLog: unsentLog
-            });
+    logger.dumpMethod = {
+        local: function (logData) {
+            var key = globalData.userid + '-' + globalData.optid;
+            var item = {};
+            item[key] = {unsent: queue};
+            localStorage.updateItem(config.storageKey, item);
+        },
+        console: function (logData) {
+            var controlBooth = window.console;
+            controlBooth.log(JSON.stringify(logData, null, 4));
+        },
+        loghost: function (logData) {
+            sendMethod(config.loghost, logData);
         }
-        else {
-            localStorage.updateItem(storageKey, {
-                unsentLog: []
-            });
-            toSend.logData = [].concat(unsentLog, logData);
-            toSend.total = toSend.logData.length;
-            if (toSend.total > 0) {
-                sendMethod(config.monitorUrl, toSend);
-            }
-        }
-        // clear log queue
-        logData.length = 0;
     };
 
     /**
      * debug log data
-     * @private
-     * @return {Object} 当前未发送的监控数据
+     * @return {Array.<Object>} queue, each log data in sendding queue
      */
     logger._debugLogData = function () {
-        return logData;
+        return queue;
     };
 
     /**
@@ -105,15 +107,16 @@ define(function (require) {
      *
      * @param {string} path 请求地址
      * @param {Object} params 请求参数
+     * @return {string} the content of the form in debug mode, or empty string.
      */
-    function sendMethod (path, params) {
+    function sendMethod(path, params) {
         var ifr = document.createElement('iframe');
         var idom = null;
 
         try {
             ifr.style.position = 'absolute';
-            ifr.style.left = -10000;
-            ifr.style.top = -10000;
+            ifr.style.left = '-10000px';
+            ifr.style.top = '-10000px';
             document.getElementsByTagName('body')[0].appendChild(ifr);
             // Create the form content.
             var win = ifr.contentWindow || ifr;  // 获取iframe的window对象
@@ -121,18 +124,18 @@ define(function (require) {
         }
         catch(e) {
             // 原始ie8下iframe性能的限制，有可能存在iframe未准备好，拒绝访问
-            return;
+            return '';
         }
 
         var html = ['<form id="f" action="', path, '" method="POST">'];
         for (var item in params) {
             if (params.hasOwnProperty(item)) {
                 var eachValue = JSON.stringify(params[item]);
+
                 html.push('<input type="hidden" name="', item, '" value="',
-                          encodeURIComponent(eachValue), '"/>');
+                    encodeURIComponent(eachValue), '"/>');
             }
         }
-
         html.push('</form>');
         var formContent = html.join('');
         idom.open();
@@ -141,12 +144,12 @@ define(function (require) {
 
         // Submit the form.
         idom.getElementById('f').submit();
-        ifr.onload = function () {
-            setTimeout(function () {
+        ifr.onload = function() {
+            setTimeout(function() {
                 $(ifr).remove();
             }, 1000);
         };
-        return;
+        return '';
     }
 
     return logger;

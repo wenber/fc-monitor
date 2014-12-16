@@ -4,14 +4,13 @@
  */
 
 define(function (require) {
+    'use strict';
 
     /**
      * 监控时的全局信息，每次监控都会携带的
      * @type {Object}
      */
-    var globalData = {
-        storageKey: 'fc-monitor-storage-key'
-    };
+    var globalData = {};
 
     return globalData;
 });
