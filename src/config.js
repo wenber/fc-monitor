@@ -6,14 +6,14 @@
 define(function (require, exports, module) {
     'use strict';
 
-    var _ = require('fc-core');
+    var _ = require('underscore');
 
     var exports = {
         loghost: '/nirvana/log/fclogimg.gif',
         threshold: 20,
         storageKey: 'fc-monitor-storage-key',
         performanceTargetPrefix: 'performance_',
-        defaultMethod: 'loghost'
+        defaultMethod: 'loghost',
         config: function (config) {
             _.extend(exports, config);
         }

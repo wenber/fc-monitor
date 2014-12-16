@@ -4,17 +4,11 @@
  */
 
 define(function (require) {
-    var browserInfo = require('../context/browser');
-    var moment = require('moment');
+    'use strict';
 
     var exports = {};
 
     exports.dump = function () {
-
-        // 高级浏览器下是能够近似的获取静态资源加载状况的，包括是否走了缓存
-        // 利用performance特性
-        var client = browserInfo.getBrowser();
-        var version = browserInfo.getBrowserVersion();
 
         // 低版本的getEntries方法可能不存在，或者换名
         var getEntries = window.performance.getEntries
@@ -55,24 +49,25 @@ define(function (require) {
             }
         }
 
-        var staticData = require('../storage/memory').getItem(
-            'performance_static'
-        );
+        // var staticData = require('../storage/memory').getItem(
+        //     'performance_static'
+        // );
 
         require('./logger').log({
             target: 'performance_resource_cached',
             isCached: isCached,
-            detail: resourceList,
-            clientTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss,SSS'),
-            serverTime: moment(require('../context/envData').getItem(
-                'userInfo'
-            ).serverTime * 1000).format('YYYY-MM-DD HH:mm:ss,SSS'),
-            browserData: browserInfo.getBrowserData(),
-            staticData: {
-                css_loaded: staticData.performance_static_css_loaded,
-                js_sync_loaded: staticData.performance_static_js_sync_loaded,
-                js_async_loaded: staticData.performance_static_js_async_loaded
-            }
+            detail: resourceList
+            // TODO(liangjinping@baidu.com) 将下面的数据放到业务收集发送
+            // clientTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss,SSS'),
+            // serverTime: moment(require('../context/envData').getItem(
+            //     'userInfo'
+            // ).serverTime * 1000).format('YYYY-MM-DD HH:mm:ss,SSS'),
+            // browserData: browserInfo.getBrowserData(),
+            // staticData: {
+            //     css_loaded: staticData.performance_static_css_loaded,
+            //     js_sync_loaded: staticData.performance_static_js_sync_loaded,
+            //     js_async_loaded: staticData.performance_static_js_async_loaded
+            // }
         });
 
     };
