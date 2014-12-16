@@ -11,7 +11,7 @@ define(function (require) {
      * @module monitor
      */
     var monitor = {
-        version: '0.0.1-alpha.5'
+        version: '0.0.1-alpha.6'
     };
 
     return monitor;
