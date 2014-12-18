@@ -10,14 +10,13 @@ define(function (require, exports, module) {
     var logger = require('./logger');
     var config = require('./config');
 
-    var systemData = {
+    var staticData = {
         eventId: fc.util.guid()
     };
     var prefix = 'performance';
-    var startTag = 'start';
     var finishTag = 'finish';
 
-    var systemKeys = [
+    var staticKeys = [
         'performance_static_html_parse',
         'performance_static_css_loaded',
         'performance_static_js_sync_loaded',
@@ -82,21 +81,17 @@ define(function (require, exports, module) {
         itemMap[itemKey] = itemMap[itemKey] || {};
         var item = itemMap[itemKey];
         item.process = item.process || [];
-        switch (process) {
-            case finishTag:
-                fc.setImmediate(function () {
-                    exports.measure(itemKey);
-                });
-                break;
-            case undefined:
-                process = 'process' + item.process.length;
-                break;
-            default:
-                if ('string' !== typeof process) {
-                    process = 'process' + item.process.length;
-                }
-                break;
+
+        if ('string' !== typeof process
+            || '' === process) {
+            process = 'process';
         }
+        if (process === finishTag) {
+            fc.setImmediate(function () {
+                exports.measure(itemKey);
+            });
+        }
+        process += '_' + item.process.length;
         item.process.push(process);
         var markName = prefix + '_' + itemKey + '_' + process;
         window.performance.mark(markName);
@@ -104,32 +99,42 @@ define(function (require, exports, module) {
 
     // TODO(liangjinping@baidu.com) 暂时还没考虑好怎么处理fc-monitor加载前的mark
     // 点，先留着这个方法
-    exports.dumpSystem = function () {
-        var current;
-        var start = window.performance.getEntriesByName(
-            'performance_static_html_parse'
-        )[0].startTime;
-        for (var i = 0, l = systemKeys.length; i < l; i++) {
-            current = window.performance.getEntriesByName(systemKeys[i]);
-            if (current.length > 0) {
-                current = current[current.length - 1];
-                systemData[current.name] = (
-                    current.startTime - start
-                ).toFixed(2);
+    exports.dumpStatic = function () {
+        var startMarkName = 'performance_static_html_parse';
+        var startMark = [].slice.call(
+            window.performance.getEntriesByName(startMarkName),
+            0
+        ).pop();
+        _.each(staticKeys, function (markName) {
+            try {
+                window.performance.measure('static', startMarkName, markName);
+                var measure = [].slice.call(
+                    window.performance.getEntriesByName('static'),
+                    0
+                ).pop();
+                staticData[markName] = measure.duration;
             }
-        }
+            catch (e) {}
+        });
+        window.performance.clearMeasures('static');
+
+        var target = 'performance_static';
         window.performance.measure(
-            'performance_static',
+            target,
             'performance_static_html_parse',
             'performance_static_er_inited'
         );
-        current = window.performance.getEntriesByName('performance_static')[0];
-        systemData['performance_static'] = current.duration.toFixed(2);
+        var measure = [].slice.call(
+            window.performance.getEntriesByName(target),
+            0
+        ).pop();
+        staticData[target] = measure.duration;
+        window.performance.clearMeasures(target);
 
         var toSend = _.extend({
-            'performance_static_html_parse_start_time': start,
-            'target': 'performance_static'
-        }, systemData);
+            'performance_static_html_parse_start_time': startMark.startTime,
+            'target': target
+        }, staticData);
 
         // 如果已经支持了HTML5的performance特性
         if (window.performance.timing) {
