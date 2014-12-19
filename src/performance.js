@@ -64,6 +64,9 @@ define(function (require, exports, module) {
         });
         window.performance.clearMeasures(itemKey);
 
+        // clear cached mark info
+        delete itemMap[itemKey];
+
         // send performance log
         logger.log(performanceData, prefix + '_' + itemKey);
     };
