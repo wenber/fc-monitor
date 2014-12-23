@@ -11,13 +11,15 @@ define(function (require, exports, module) {
     var exports = {
         firstMark: 'performance_static_html_parse',
         loghost: '/nirvana/log/fclogimg.gif',
-        threshold: 20,
+        threshold: 1,
         storageKey: 'fc-monitor-storage-key',
         performanceTargetPrefix: 'performance_',
         defaultMethod: 'loghost',
         config: function (config) {
             _.extend(exports, config);
-        }
-    }
+        },
+        ajaxRecordPoolSize: 2
+    };
+
     return exports;
 });
