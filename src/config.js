@@ -53,6 +53,12 @@ define(function (require, exports, module) {
         token: fc.util.guid(),
 
         /**
+         * Ajax日志池大小
+         * @type {string}
+         */
+        ajaxRecordPoolSize: 2,
+
+        /**
          * Setup configuration
          * @param {Object} config configuration
          * @return {Object} exports
@@ -62,4 +68,5 @@ define(function (require, exports, module) {
         }
     };
     return module.exports = exports;
+
 });
