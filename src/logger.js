@@ -43,6 +43,7 @@ define(function (require) {
 
         if (recorder.pageInactived) {
             logInfo.pageInactived = recorder.pageInactived;
+            logInfo.inactivedDuration = recorder.inactivedDuration;
         }
 
         queue.push(logInfo);
