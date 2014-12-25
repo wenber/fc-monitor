@@ -23,21 +23,22 @@ define(function (require, exports, module) {
         }).filter(function (mark) {
             return !!mark;
         }).sortBy('startTime').map(function (mark, idx, list) {
-            var startMark = list[0];
-            var entry = util.measure('timeline', startMark.name, mark.name);
+            var start = list[0];
+            var entry = util.measure('timeline' + idx, start.name, mark.name);
             if (entry) {
                 return {
                     duration: entry.duration,
                     startTime: entry.startTime,
                     endMark: mark.name,
-                    startMark: startMark.name
+                    startMark: start.name
                 };
             }
             return null;
+        }).each(function (mark, idx) {
+            window.performance.clearMeasures('timeline' + idx);
         }).filter(function (mark) {
             return !!mark;
         }).value();
-        window.performance.clearMeasures('timeline');
         return measureList;
     };
     return ;

@@ -37,7 +37,9 @@ define(function (require, exports, module) {
         )).each(function (measure) {
             performanceData[measure.endMark] = measure.duration;
             // clear mark
-            window.performance.clearMarks(measure.endMark);
+            if (measure.endMark !== config.firstMark) {
+                window.performance.clearMarks(measure.endMark);
+            }
         }).value();
         performanceData[prefix + itemKey] = _.max(performanceData);
 
