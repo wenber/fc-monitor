@@ -9,57 +9,47 @@ define(function (require, exports, module) {
     'use strict';
 
     var _ = require('underscore');
-    var util = require('../util');
     var config = require('../config');
     var logger = require('../logger');
+    var timeline = require('./timeline');
     var memory = require('fc-storage/memory');
-    var fc = require('fc-core');
-
-    var staticKeys = [
-        'performance_static_html_parse',
-        'performance_static_css_loaded',
-        'performance_static_js_sync_loaded',
-        'performance_static_js_async_loaded',
-        'performance_static_basicInfo_start',
-        'performance_static_basicInfo_finish',
-        'performance_static_er_inited'
-    ];
-
-    var staticData = {
-        eventId: fc.util.guid()
-    };
-    var staticMeasure = [];
 
     /**
      * 计算静态资源性能
+     * @param {Array.<string>=} markNames 静态资源埋点列表
      * @return {Object} exports 返回模块自身，供链式调用
      */
-    exports.measure = function () {
-        var keys = staticKeys || [];
-        _.each(keys, function (key) {
-            try {
-                var startMarkName = keys[0];
-                window.performance.measure('static', startMarkName, key);
-                var measure = util.getEntry('static');
-                staticMeasure.push(measure);
-                staticData[key] = measure.duration;
-            }
-            catch (e) {}
-        });
+    exports.measure = function (markNames) {
+        var keys = markNames || config.staticMarks || [];
+        var staticData = {};
+        var measureList = _.chain(
+            timeline.measure(keys)
+        ).each(function (measure) {
+            staticData[measure.endMark] = measure.duration;
+        }).value();
+        // 没有埋点，不用处理
+        if (!measureList.length) {
+            return;
+        }
         var target = 'performance_static';
-        var measureList = _.sortBy(staticMeasure, 'duration');
-        staticData[target] = _.last(measureList).duration;
-        staticData[target + '_start_time'] = _.first(measureList).startTime;
+        var firstMark = _.first(measureList);
+        staticData[target] = _.max(staticData);
+        staticData[firstMark.startMark + '_start_time'] = firstMark.startTime;
 
-        var item = {};
-        item[target] = {};
-        item[target].measure = staticMeasure;
-        item[target].logData = staticData;
-        memory.updateItem(config.storageKey, item);
+        // 将静态资源的性能数据缓存在内存中，以备不时之需
+        memory.updateItem(config.storageKey, {
+            performance: {
+                'static': {
+                    measure: measureList,
+                    data: staticData
+                }
+            }
+        });
 
-        window.performance.clearMeasures('static');
-
-        var toSend = _.extend({}, staticData);
+        var toSend = _.extend(
+            {performanceId: config.performanceId},
+            staticData
+        );
 
         // 如果已经支持了HTML5的performance特性
         if (window.performance.timing) {
@@ -71,11 +61,12 @@ define(function (require, exports, module) {
             );
         }
 
-        fc.setImmediate(function () {
-            logger.log(toSend, target);
-        });
+        logger.log(toSend, target);
 
         return exports;
+    };
+
+    exports.dump = function () {
     };
     return module.exports = exports;
 });

@@ -28,5 +28,16 @@ define(function (require, exports, module) {
         || window.performance.webkitGetEntries
         || null;
 
+    exports.measure = function (name, start, end) {
+        var entry = null;
+        try {
+            window.performance.measure(name, start, end);
+            entry = exports.getEntry(name);
+        }
+        catch (e) {
+        }
+        return entry;
+    };
+
     return module.exports = exports;
 });

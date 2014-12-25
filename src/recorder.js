@@ -6,9 +6,12 @@
 define(function (require, exports, module) {
     'use strict';
 
+    var _ = require('underscore');
     var globalData = require('./globalData');
     var browser = require('fc-core/browser');
+    var memory = require('fc-storage/memory');
     var util = require('./util');
+    var config = require('./config');
 
     /**
      * 记录器，记录用户特别行为，如切换标签等
@@ -29,71 +32,66 @@ define(function (require, exports, module) {
     recorder.inactivedDuration = [];
 
     /**
-     * 获取需要绑定的事件名和hidden属性名
-     * @return {Object} opts 根据不同浏览器返回不同的事件名和属性名
+     * 需要绑定的事件名和hidden属性名
+     * @type {Object}
      */
-    function getTabSwitchOpts() {
-        var opts = {};
-        if ('undefined' !== document.hidden) {
-            opts.hidden = 'hidden';
-            opts.eventTypeList = ['visibilitychange'];
-        }
-        else if ('undefined' !== document.mozHidden) {
-            opts.hidden = 'mozHidden';
-            opts.eventTypeList = ['mozvisibilitychange'];
-        }
-        else if ('undefined' !== document.webkitHidden) {
-            opts.hidden = 'webkitHidden';
-            opts.eventTypeList = ['webkitvisibilitychange'];
-        }
-        else if ('undefined' !== document.msHidden) {
-            opts.hideen = 'msHidden';
-            opts.eventTypeList = ['msvisibilitychange'];
-        }
-        else if ('undefined' !== document.onfocusin) {
-            // For IE 9
-            opts.hidden = null;
-            opts.eventTypeList = ['focusin', 'focusout'];
-        }
-        else {
-            opts.hidden = null;
-            opts.eventTypeList = [];
-        }
-        return opts;
+    var tabSwitchOpts = {};
+    if ('undefined' !== document.hidden) {
+        tabSwitchOpts.hidden = 'hidden';
+        tabSwitchOpts.eventTypeList = ['visibilitychange'];
+    }
+    else if ('undefined' !== document.mozHidden) {
+        tabSwitchOpts.hidden = 'mozHidden';
+        tabSwitchOpts.eventTypeList = ['mozvisibilitychange'];
+    }
+    else if ('undefined' !== document.webkitHidden) {
+        tabSwitchOpts.hidden = 'webkitHidden';
+        tabSwitchOpts.eventTypeList = ['webkitvisibilitychange'];
+    }
+    else if ('undefined' !== document.msHidden) {
+        tabSwitchOpts.hideen = 'msHidden';
+        tabSwitchOpts.eventTypeList = ['msvisibilitychange'];
+    }
+    else if ('undefined' !== document.onfocusin) {
+        // For IE 9
+        tabSwitchOpts.hidden = null;
+        tabSwitchOpts.eventTypeList = ['focusin', 'focusout'];
+    }
+    else {
+        tabSwitchOpts.hidden = null;
+        tabSwitchOpts.eventTypeList = [];
     }
 
     /**
      * 监听事件
      */
     function listenTabSwitchEvent() {
-        var opts = getTabSwitchOpts();
-        var eventTypeList = opts.eventTypeList;
-        var i = 0;
-        var len = eventTypeList.length;
-        var type;
-        if (document.addEventListener) {
-            for (i = 0; i < len; i++) {
-                type = eventTypeList[i];
+        var eventTypeList = tabSwitchOpts.eventTypeList;
+        _.each(eventTypeList, function (type) {
+            if (document.addEventListener) {
                 document.addEventListener(type, tabSwitchHandler, false);
             }
-        }
-        else if (document.attachEvent) {
-            // 某些IE不支addEventListener
-            for (i = 0; i < len; i++) {
-                type = eventTypeList[i];
+            else if (document.attachEvent) {
+                // 某些IE不支addEventListener
                 document.attachEvent('on' + type, tabSwitchHandler);
             }
-        }
-        else {
-            // 其它情况直接绑定
-            for (i = 0; i < len; i++) {
-                type = eventTypeList[i];
-                document['on' + type] = tabSwitchHandler;
-            }
-        }
+        });
 
         // 初始化一次状态
         tabSwitchHandler({});
+    }
+
+    function unbindTabSwitchEvent() {
+        var eventTypeList = tabSwitchOpts.eventTypeList;
+        _.each(eventTypeList, function (type) {
+            if (document.removeEventListener) {
+                document.removeEventListener(type, tabSwitchHandler);
+            }
+            else if (document.detachEvent) {
+                // 某些IE不支removeEventListener
+                document.detachEvent('on' + type, tabSwitchHandler);
+            }
+        });
     }
 
     function mark() {
@@ -117,12 +115,11 @@ define(function (require, exports, module) {
      */
     function tabSwitchHandler(e) {
         try {
-            var opts = getTabSwitchOpts();
-            if ((opts.hidden && document[opts.hidden])
+            if ((tabSwitchOpts.hidden && document[tabSwitchOpts.hidden])
                 || e.type === 'focusin') {
                 mark();
             }
-            else if ((opts.hidden && !document[opts.hidden])
+            else if ((tabSwitchOpts.hidden && !document[tabSwitchOpts.hidden])
                 || e.type === 'focusout') {
                 measure();
             }
@@ -138,6 +135,9 @@ define(function (require, exports, module) {
     recorder.init = function (context) {
         if (context) {
             recorder.updateGlobalData(context);
+            memory.updateItem(config.storageKey, {
+                context: context
+            });
         }
         listenTabSwitchEvent();
         return recorder;
@@ -164,6 +164,7 @@ define(function (require, exports, module) {
     recorder.reset = function () {
         recorder.pageInactived = 0;
         recorder.inactivedDuration = [];
+        unbindTabSwitchEvent();
         return recorder;
     };
     return recorder;

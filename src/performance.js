@@ -6,12 +6,12 @@
 define(function (require, exports, module) {
 
     var _ = require('underscore');
-    var fc = require('fc-core');
     var logger = require('./logger');
     var config = require('./config');
+    var timeline = require('./performance/timeline');
+    var memory = require('fc-storage/memory');
 
-    var prefix = 'performance';
-    var finishTag = 'finish';
+    var prefix = config.performanceTargetPrefix;
 
     var itemMap = {};
 
@@ -28,35 +28,36 @@ define(function (require, exports, module) {
         if (!item || item.process.length === 0) {
             return;
         }
-
+        var markNames = _.map(item.process, function (process) {
+            return prefix + itemKey + '_' + process;
+        });
         var performanceData = {};
-        _.each(item.process, function (process) {
-            var markName = prefix + '_' + itemKey + '_' + process;
-            window.performance.measure(itemKey, config.firstMark, markName);
-            var measure = [].slice.call(
-                window.performance.getEntriesByName(itemKey),
-                0
-            ).pop();
-            performanceData[markName] = measure.duration;
-        });
-        var measure = [].slice.call(
-            window.performance.getEntriesByName(itemKey),
-            0
-        ).pop();
-        performanceData[prefix + '_' + itemKey] = measure.duration;
+        var measureList = _.chain(timeline.measure(
+            [config.firstMark].concat(markNames)
+        )).each(function (measure) {
+            performanceData[measure.endMark] = measure.duration;
+            // clear mark
+            window.performance.clearMarks(measure.endMark);
+        }).value();
+        performanceData[prefix + itemKey] = _.max(performanceData);
 
-        // clear marks
-        _.each(item.process, function (process) {
-            var markName = prefix + '_' + itemKey + '_' + process;
-            window.performance.clearMarks(markName);
+        var statis = {};
+        statis[itemKey] = {
+            measure: measureList,
+            data: performanceData
+        };
+        memory.updateItem(config.storageKey, {
+            performance: statis
         });
-        window.performance.clearMeasures(itemKey);
 
         // clear cached mark info
         delete itemMap[itemKey];
 
         // send performance log
-        logger.log(performanceData, prefix + '_' + itemKey);
+        logger.log(
+            _.extend({performanceId: config.performanceId}, performanceData),
+            prefix + itemKey
+        );
         return exports;
     };
 
@@ -79,16 +80,14 @@ define(function (require, exports, module) {
             || '' === process) {
             process = 'process';
         }
-        if (process === finishTag) {
-            fc.setImmediate(function () {
-                exports.measure(itemKey);
-            });
-        }
         process += '_' + item.process.length;
         item.process.push(process);
-        var markName = prefix + '_' + itemKey + '_' + process;
+        var markName = prefix + itemKey + '_' + process;
         window.performance.mark(markName);
         return exports;
+    };
+
+    exports.init = function () {
     };
 
     return module.exports = exports;

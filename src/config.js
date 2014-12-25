@@ -47,16 +47,34 @@ define(function (require, exports, module) {
         defaultMethod: 'loghost',
 
         /**
-         * Token
+         * Id
          * @type {string}
          */
-        token: fc.util.guid(),
+        performanceId: fc.util.guid(),
 
         /**
          * Ajax日志池大小
          * @type {string}
          */
         ajaxRecordPoolSize: 2,
+
+        /**
+         * 时间线埋点名
+         * @type {Array.<string>}
+         */
+        timelineMarks: null,
+
+        /**
+         * 静态资源埋点名
+         * @type {Array.<string>}
+         */
+        staticMarks: null,
+
+        /**
+         * 需要监控的资源列表匹配规则
+         * @type {Array.<string|RegExp>}
+         */
+        resourceWatchingList: null,
 
         /**
          * Setup configuration
