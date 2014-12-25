@@ -20,7 +20,7 @@ define(function (require, exports, module) {
          * Log url for method loghost
          * @type {string}
          */
-        loghost: '/nirvana/log/fclogimg.gif',
+        loghost: '/logger.gif',
 
         /**
          * Threshold of log queue
@@ -56,7 +56,7 @@ define(function (require, exports, module) {
          * Ajax日志池大小
          * @type {string}
          */
-        ajaxRecordPoolSize: 2,
+        ajaxRecordPoolSize: 20,
 
         /**
          * 时间线埋点名
