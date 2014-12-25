@@ -8,6 +8,7 @@ define(function (require, exports, module) {
     var _ = require('underscore');
     var logger = require('./logger');
     var config = require('./config');
+    var recorder = require('./recorder');
     var timeline = require('./performance/timeline');
     var memory = require('fc-storage/memory');
 
@@ -57,7 +58,13 @@ define(function (require, exports, module) {
 
         // send performance log
         logger.log(
-            _.extend({performanceId: config.performanceId}, performanceData),
+            _.extend(
+                {
+                    performanceId: config.performanceId,
+                    pageStabled: recorder.stable ? 1 : 0
+                },
+                performanceData
+            ),
             prefix + itemKey
         );
         return exports;
