@@ -46,6 +46,8 @@ define(function (require) {
             logInfo.inactivedDuration = recorder.inactivedDuration;
         }
 
+        logInfo.logVersion = config.logVersion;
+
         queue.push(logInfo);
         if (queue.length >= config.threshold) {
             fc.setImmediate(function () {

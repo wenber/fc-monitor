@@ -77,6 +77,12 @@ define(function (require, exports, module) {
         resourceWatchingList: null,
 
         /**
+         * 监控日志版本
+         * @type {string}
+         */
+        logVersion: null,
+
+        /**
          * Setup configuration
          * @param {Object} config configuration
          * @return {Object} exports
