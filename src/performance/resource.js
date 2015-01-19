@@ -13,6 +13,7 @@ define(function (require, exports, module) {
     var config = require('../config');
     var memory = require('fc-storage/memory');
     var browser = require('fc-core/browser');
+    var recorder = require('../recorder');
     var logger = require('../logger');
 
     exports.measure = function () {
@@ -67,7 +68,8 @@ define(function (require, exports, module) {
             performanceId: config.performanceId,
             detail: list,
             browserData: browser.getBrowserData(),
-            staticData: staticData.log
+            staticData: staticData.log,
+            pageStabled: recorder.stable ? 1 : 0
             // TODO(liangjinping@baidu.com) 将下面的数据放到业务收集发送
             // clientTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss,SSS'),
             // serverTime: moment(require('../context/envData').getItem(
