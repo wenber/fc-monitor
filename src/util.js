@@ -39,5 +39,9 @@ define(function (require, exports, module) {
         return entry;
     };
 
+    exports.createEventId = function () {
+        return require('fc-core').util.guid();
+    };
+
     return module.exports = exports;
 });
