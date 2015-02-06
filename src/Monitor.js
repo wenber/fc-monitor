@@ -22,35 +22,90 @@ define(function (require) {
      * @param {Object} watchList 监控列表
      */
     function Monitor(watchList) {
-        this.watchList = watchList;
+        this.injectConf = {};
+        this.watchList = [].concat(watchList);
+        this.mergeList(this.watchList);
+    }
+
+    /**
+     * 合并配置
+     * @param {Array.<Object>|Object} list 单个或多个监控配置
+     */
+    Monitor.prototype.mergeList = function (list) {
+        this.injectConf = _.reduce([].concat(list), function (memo, item, idx) {
+            _.each(item, function (injectMethod, methodName) {
+                injectMethod = injectMethod || {};
+                var confItem = memo[methodName] = memo[methodName] || {};
+                confItem.before = [].concat(confItem.before, injectMethod.before || injectMethod);
+                confItem.after = [].concat(confItem.after, injectMethod.after || injectMethod);
+            });
+            return memo;
+        }, this.injectConf);
+    };
+
+    /**
+     * 增加监控配置
+     * @param {Array.<Object>|Object} list 单个或多个监控配置
+     */
+    Monitor.prototype.addList = function (list) {
+        this.watchList = [].concat(this.watchList, list);
+        this.mergeList(list);
+    };
+
+    /**
+     * 串联合并多个方法
+     * @return {Function} series 合并后的方法
+     */
+    function series() {
+        var funcs = _.select([].slice.call(arguments, 1), _.isFunction);
+        return function () {
+            var ctx = this;
+            var args = arguments;
+            _.each(funcs, function (func) {
+                func.apply(ctx, args);
+            });
+        };
     }
 
     /**
      * inject 劫持注入callback
      *
      * @private
-     * @param {string} item 属性名称
-     * @param {Object} owner owner对象
-     * @param {Function} before 注入函数
-     * @param {Function} after 注入函数
+     * @param {string} methodName 属性名称
+     * @param {Object} ctx ctx对象
+     * @param {Object|Array.<Function>|Function} injectMethod 要注入的方法
+     * @property {Array.<Function>|Function} injectMethod.before 注入函数，执行于被注入方法之前
+     * @property {Array.<Function>|Function} injectMethod.after 注入函数，执行于被注入方法之后
      */
-    function inject(item, owner, before, after) {
-        fc.aop.before(owner, item, before);
-        fc.aop.after(owner, item, after);
+    function inject(methodName, ctx, injectMethod) {
+        if (_.isFunction(injectMethod)) {
+            fc.aop.around(ctx, methodName, injectMethod);
+        }
+        else if (_.isArray(injectMethod)) {
+            fc.aop.around(ctx, methodName, series.apply(this, [].concat(injectMethod)));
+        }
+        else {
+            if (injectMethod && injectMethod.before) {
+                fc.aop.before(ctx, methodName, series.apply(this, [].concat(injectMethod.before)));
+            }
+            if (injectMethod && injectMethod.after) {
+                fc.aop.after(ctx, methodName, series.apply(this, [].concat(injectMethod.after)));
+            }
+        }
     }
 
     /**
-     * watch 注入监控列表
+     * watch 监控对象或类
      *
      * @public
      * @param {Object} Clazz 监控类或对象
      */
     Monitor.prototype.watch = function (Clazz) {
-        var owner = Clazz.prototype || Clazz;
-        var list = this.watchList || {};
-        _.each(list, function (item, name) {
-            if (list[name] && owner[name]) {
-                inject(name, owner, item.before, item.after);
+        var ctx = Clazz.prototype || Clazz;
+        var conf = this.injectConf || {};
+        _.each(conf, function (injectMethod, name) {
+            if (conf[name] && _.isFunction(ctx[name])) {
+                inject(name, ctx, injectMethod);
             }
         });
     };

@@ -13,6 +13,7 @@ define(function (require, exports, module) {
     var logger = require('../logger');
     var timeline = require('./timeline');
     var memory = require('fc-storage/memory');
+    var recorder = require('../recorder');
 
     /**
      * 计算静态资源性能
@@ -47,7 +48,10 @@ define(function (require, exports, module) {
         });
 
         var toSend = _.extend(
-            {performanceId: config.performanceId},
+            {
+                performanceId: config.performanceId,
+                pageStabled: recorder.stable ? 1 : 0
+            },
             staticData
         );
 
