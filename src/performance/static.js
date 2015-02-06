@@ -69,8 +69,4 @@ define(function (require, exports, module) {
 
         return exports;
     };
-
-    exports.dump = function () {
-    };
-    return module.exports = exports;
 });

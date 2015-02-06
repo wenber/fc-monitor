@@ -1,9 +1,11 @@
 /**
+ * Copyright (C) 2015 All rights reserved.
+ *
  * @file 监控发送
- * @author Leo Wang(wangkemiao@baidu.com)
+ * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require) {
+define(function (require, exports) {
     'use strict';
 
     var _ = require('underscore');
@@ -11,28 +13,37 @@ define(function (require) {
 
     var config = require('./config');
     var globalData = require('./globalData');
-    var localStorage = require('fc-storage');
+    var localStorage = require('fc-storage/localStorage');
     var recorder = require('./recorder');
 
+    /**
+     * 上一次监控的target，用于跟踪埋点之间的关系
+     * 每一次调用log方法时都会更新这个值
+     * 第一个埋点的lastTarget为'PAGE_LOAD'表示在此之前没有埋点
+     *
+     * @type {string}
+     */
     var lastTarget = 'PAGE_LOAD';
 
-    var queue = [];
-
     /**
-     * logger定义
+     * 缓存日志的队列
+     * 在每一次dump之后会清空
+     *
+     * @type {Array.<Object>}
      */
-    var logger = {};
+    var queue = [];
 
     /**
      * 进行一次监控
      * @param {Object} data 要监控的数据
      * @param {string=} target 可选的监控数据的target字段，会覆盖data中的target
      */
-    logger.log = function (data, target) {
+    exports.log = function (data, target) {
         var logInfo = _.deepExtend({timestamp: +(new Date())}, data);
         if (target) {
             logInfo.target = target;
         }
+        // 用时间戳和target, lastTarget可以串联中用户的行为日志
         logInfo.lastTarget = lastTarget;
         lastTarget = logInfo.target;
 
@@ -51,57 +62,64 @@ define(function (require) {
         queue.push(logInfo);
         if (queue.length >= config.threshold) {
             fc.setImmediate(function () {
-                logger.dump();
+                exports.dump();
             });
         }
     };
 
     /**
-     * dump unsent log
-     * @param {Object} options
-     *  options.method: dump method
-     *      'local': save log data to local storage;
-     *      'console' dump log data to console;
-     *      'loghost' dump log data to log server, default;
+     * 发送日志
+     * @param {Object} options 选项
+     * @property {string} options.method dump日志的方式，默认值为'loghost'(可配)
+     *     'local': 保存日志到localStorage中
+     *     'console' 在控制台中打印日志
+     *     'loghost' 将日志发送到日志主机
      */
-    logger.dump = function (options) {
+    exports.dump = function (options) {
         options = options || {};
         var toSend = _.deepExtend({timestamp: +(new Date())}, globalData);
         toSend.logData = queue;
         toSend.total = queue.length;
 
         var method = options.method || config.defaultMethod;
-        if (undefined === logger.dumpMethod[method]) {
+        if (undefined === exports.dumpMethod[method]) {
             method = config.defaultMethod;
         }
-        if ('function' === typeof logger.dumpMethod[method]) {
-            logger.dumpMethod[method](toSend);
+        if ('function' === typeof exports.dumpMethod[method]) {
+            exports.dumpMethod[method](toSend);
             // clear log queue
             queue.length = 0;
         }
     };
 
-    logger.dumpMethod = {
+    /**
+     * 发送日志的方法
+     */
+    exports.dumpMethod = {
+        // 将队列中的日志存到localStorage中
         local: function (logData) {
             var key = globalData.userid + '-' + globalData.optid;
             var item = {};
             item[key] = {unsent: queue};
             localStorage.updateItem(config.storageKey, item);
         },
+
+        // 将队列中的日志打印到控制台中
         console: function (logData) {
-            var controlBooth = window.console;
-            controlBooth.log(JSON.stringify(logData, null, 4));
+            window.console.log(JSON.stringify(logData, null, 4));
         },
+
+        // 将队列中的日志发送到指定的日志主机
         loghost: function (logData) {
-            sendMethod(config.loghost, logData);
+            exports.send(config.loghost, logData);
         }
     };
 
     /**
-     * debug log data
-     * @return {Array.<Object>} queue, each log data in sendding queue
+     * 返回日志数据，调试用
+     * @return {Array.<Object>} 当前的log队列
      */
-    logger._debugLogData = function () {
+    exports._debugLogData = function () {
         return queue;
     };
 
@@ -110,9 +128,8 @@ define(function (require) {
      *
      * @param {string} path 请求地址
      * @param {Object} params 请求参数
-     * @return {string} the content of the form in debug mode, or empty string.
      */
-    function sendMethod(path, params) {
+    exports.send = function (path, params) {
         var ifr = document.createElement('iframe');
         var idom = null;
 
@@ -125,10 +142,7 @@ define(function (require) {
             var win = ifr.contentWindow || ifr;  // 获取iframe的window对象
             idom = win.document;  // 获取iframe的document对象
         }
-        catch(e) {
-            // 原始ie8下iframe性能的限制，有可能存在iframe未准备好，拒绝访问
-            return '';
-        }
+        catch (e) {}
 
         var html = ['<form id="f" action="', path, '" method="POST">'];
         for (var item in params) {
@@ -147,13 +161,10 @@ define(function (require) {
 
         // Submit the form.
         idom.getElementById('f').submit();
-        ifr.onload = function() {
-            setTimeout(function() {
-                $(ifr).remove();
+        ifr.onload = function () {
+            setTimeout(function () {
+                ifr.parentNode.removeChild(ifr);
             }, 1000);
         };
-        return '';
-    }
-
-    return logger;
+    };
 });

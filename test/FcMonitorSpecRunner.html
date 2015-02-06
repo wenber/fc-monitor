@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>FcMonitor Spec Runner in Jasmine v2.1.2</title>
+
+    <link rel="shortcut icon" type="image/png" href="lib/jasmine-2.1.2/jasmine_favicon.png">
+    <link rel="stylesheet" href="lib/jasmine-2.1.2/jasmine.css">
+
+    <script src="lib/jasmine-2.1.2/jasmine.js"></script>
+    <script src="lib/jasmine-2.1.2/jasmine-html.js"></script>
+    <script src="lib/jasmine-2.1.2/boot.js"></script>
+    <script src="http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-6/esl.js"></script>
+    <script src="http://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+</head>
+<body>
+    <script>
+        require.config({
+            'baseUrl': '../src',
+            'packages': [
+                {
+                    'name': 'fc-monitor',
+                    'location': '../../src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'fc-core',
+                    'location': '../dep/fc-core/0.0.1-alpha.7/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'fc-storage',
+                    'location': '../dep/fc-storage/0.0.1-alpha.6/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'mini-event',
+                    'location': '../dep/mini-event/1.0.2/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'promise',
+                    'location': '../dep/promise/1.0.0/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'eoo',
+                    'location': '../dep/eoo/0.1.1/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'etpl',
+                    'location': '../dep/etpl/3.0.0/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'underscore',
+                    'location': '../dep/underscore/1.6.0/src',
+                    'main': 'underscore'
+                }
+            ],
+            'paths': {}
+        });
+    </script>
+    <script>
+        $(function () {
+            require([
+                'spec/performanceSpec'
+            ], function () {
+                htmlReporter.initialize();
+                jasmine.getEnv().execute();
+            });
+        });
+    </script>
+
+    <!-- 测试文件 -->
+    <script src="spec/performanceSpec.js"></script>
+</body>
+</html>
