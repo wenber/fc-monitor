@@ -1,15 +1,39 @@
 {
     "name": "fc-monitor",
-    "version": "0.0.1-alpha.1",
-    "contributors": [
+    "version": "0.0.1-alpha.7",
+    "maintainers": [
         {
             "name": "Leo Wang",
             "email": "wangkemiao@baidu.com"
+        },
+        {
+            "name": "Peide Leong",
+            "email": "liangjinping@baidu.com"
         }
     ],
-    "dependencies": {},
+    "contributors": [],
+    "dependencies": {
+        "fc-core": "0.x",
+        "fc-storage": "0.x"
+    },
     "main": "main",
-    "description": "monitor封装库",
-    "homepage": "https://gitlab.com/fc-fe/fc-monitor",
-    "repository": "git://gitlab.com/fc-fe/fc-monitor"
+    "description": "FC monitor封装库",
+    "homepage": "https://github.com/fcfe/fc-monitor",
+    "repository": "git://github.com/fcfe/fc-monitor",
+    "edp": {
+        "wwwroot": "/",
+        "depDir": "dep",
+        "srcDir": "src",
+        "loaderAutoConfig": "js,htm,html,tpl,vm,phtml",
+        "loaderUrl": "http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-2/esl.js",
+        "dependencies": {
+            "eoo": "~0.1.1",
+            "etpl": "~3.0.0",
+            "fc-core": "~0.0.1-alpha.7",
+            "fc-storage": "~0.0.1-alpha.6",
+            "mini-event": "~1.0.2",
+            "promise": "~1.0.0",
+            "underscore": "~1.6.0"
+        }
+    }
 }
