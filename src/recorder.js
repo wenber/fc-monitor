@@ -1,5 +1,11 @@
 /**
  * @file recorder.js 记录器，记录用户的特殊行为
+ * @description
+ *     提供以下方法
+ *     - init: function (context) {}
+ *         初始化，并将context数据存到globalData中
+ *     - reset: function () {}
+ *         重置记录器（不清除globalData信息）
  * @author Pride Leong(liangjinping@baidu.com)
  */
 

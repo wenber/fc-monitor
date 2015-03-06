@@ -2,6 +2,12 @@
  * Copyright (C) 2015 All rights reserved.
  *
  * @file 监控发送
+ * @description 发送监控数据
+ *     提供以下方法
+ *     - log: function (data, target) {}
+ *         监控（或将监控数据存到队列中）
+ *     - dump: function (option) {}
+ *         发送监控
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
