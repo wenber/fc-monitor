@@ -73,15 +73,22 @@ define(function (require, exports) {
         // clear cached mark info
         delete itemMap[itemKey];
 
+        var toSend = _.extend(
+            {
+                performanceId: config.performanceId,
+                pageStabled: recorder.stable ? 1 : 0
+            },
+            performanceData
+        );
+
+        if (recorder.pageInactived) {
+            toSend.pageInactived = recorder.pageInactived;
+            toSend.inactivedDuration = recorder.inactivedDuration;
+        }
+
         // send performance log
         logger.log(
-            _.extend(
-                {
-                    performanceId: config.performanceId,
-                    pageStabled: recorder.stable ? 1 : 0
-                },
-                performanceData
-            ),
+            toSend,
             prefix + itemKey
         );
         return statis;

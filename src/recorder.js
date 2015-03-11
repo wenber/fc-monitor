@@ -134,11 +134,11 @@ define(function (require) {
     function tabSwitchHandler(e) {
         try {
             if ((tabSwitchOpts.hidden && document[tabSwitchOpts.hidden])
-                || e.type === 'focusin') {
+                || e.type === 'focusout') {
                 mark();
             }
             else if ((tabSwitchOpts.hidden && !document[tabSwitchOpts.hidden])
-                || e.type === 'focusout') {
+                || e.type === 'focusin') {
                 measure();
             }
         }

@@ -20,7 +20,7 @@ define(function (require, exports) {
     var config = require('./config');
     var globalData = require('./globalData');
     var localStorage = require('fc-storage/localStorage');
-    var recorder = require('./recorder');
+    var EventTarget = require('mini-event/EventTarget');
 
     /**
      * 上一次监控的target，用于跟踪埋点之间的关系
@@ -40,6 +40,12 @@ define(function (require, exports) {
     var queue = [];
 
     /**
+     * 发送日志的iframe的id
+     * @type {string}
+     */
+    var logFrameId = 'log-submit-frame';
+
+    /**
      * 进行一次监控
      * @param {Object} data 要监控的数据
      * @param {string=} target 可选的监控数据的target字段，会覆盖data中的target
@@ -57,12 +63,6 @@ define(function (require, exports) {
         var path = url.split('~')[0].replace(/^#/, '') || '/';
 
         logInfo.path = path;
-
-        if (recorder.pageInactived) {
-            logInfo.pageInactived = recorder.pageInactived;
-            logInfo.inactivedDuration = recorder.inactivedDuration;
-        }
-
         logInfo.logVersion = config.logVersion;
 
         queue.push(logInfo);
@@ -83,9 +83,16 @@ define(function (require, exports) {
      */
     exports.dump = function (options) {
         options = options || {};
+        var key = globalData.userid + '-' + globalData.optid;
+        var item = localStorage.getItem(config.storageKey) || {};
+        var unsent = (item[key] || {}).unsent || [];
+        if (!unsent.length && !queue.length) {
+            // There is nothing to be dump
+            return;
+        }
         var toSend = _.deepExtend({timestamp: +(new Date())}, globalData);
-        toSend.logData = queue;
-        toSend.total = queue.length;
+        toSend.logData = unsent.concat(queue);
+        toSend.total = unsent.length + queue.length;
 
         var method = options.method || config.defaultMethod;
         if (undefined === exports.dumpMethod[method]) {
@@ -106,18 +113,26 @@ define(function (require, exports) {
         local: function (logData) {
             var key = globalData.userid + '-' + globalData.optid;
             var item = {};
-            item[key] = {unsent: queue};
+            item[key] = {unsent: logData.logData};
             localStorage.updateItem(config.storageKey, item);
         },
 
         // 将队列中的日志打印到控制台中
         console: function (logData) {
             window.console.log(JSON.stringify(logData, null, 4));
+            var key = globalData.userid + '-' + globalData.optid;
+            var item = {};
+            item[key] = {unsent: []};
+            localStorage.updateItem(config.storageKey, item);
         },
 
         // 将队列中的日志发送到指定的日志主机
         loghost: function (logData) {
             exports.send(config.loghost, logData);
+            var key = globalData.userid + '-' + globalData.optid;
+            var item = {};
+            item[key] = {unsent: []};
+            localStorage.updateItem(config.storageKey, item);
         }
     };
 
@@ -136,41 +151,37 @@ define(function (require, exports) {
      * @param {Object} params 请求参数
      */
     exports.send = function (path, params) {
-        var ifr = document.createElement('iframe');
-        var idom = null;
-
+        var ifr = document.getElementById(logFrameId);
+        if (!ifr) {
+            ifr = document.createElement('iframe');
+            ifr.id = logFrameId;
+            ifr.style.display = 'none';
+            ifr.onload = function () {
+                exports.fire('logsended');
+            };
+        }
+        var ifrw = null;
+        var ifrd = null;
         try {
-            ifr.style.position = 'absolute';
-            ifr.style.left = '-10000px';
-            ifr.style.top = '-10000px';
             document.getElementsByTagName('body')[0].appendChild(ifr);
-            // Create the form content.
-            var win = ifr.contentWindow || ifr;  // 获取iframe的window对象
-            idom = win.document;  // 获取iframe的document对象
+            ifrw = ifr.contentWindow || ifr;
+            ifrd = ifrw.document;
         }
         catch (e) {}
-
-        var html = ['<form id="f" action="', path, '" method="POST">'];
-        for (var item in params) {
-            if (params.hasOwnProperty(item)) {
-                var eachValue = JSON.stringify(params[item]);
-
-                html.push('<input type="hidden" name="', item, '" value="',
-                    encodeURIComponent(eachValue), '"/>');
-            }
-        }
-        html.push('</form>');
-        var formContent = html.join('');
-        idom.open();
-        idom.write(formContent);
-        idom.close();
-
-        // Submit the form.
-        idom.getElementById('f').submit();
-        ifr.onload = function () {
-            setTimeout(function () {
-                ifr.parentNode.removeChild(ifr);
-            }, 1000);
-        };
+        var form = ifrd.createElement('form');
+        form.action = path;
+        form.method = 'POST';
+        _.each(params, function (value, key) {
+            var val = JSON.stringify(value);
+            var input = ifrd.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = encodeURIComponent(val);
+            form.appendChild(input);
+        });
+        ifrd.getElementsByTagName('body')[0].appendChild(form);
+        form.submit();
     };
+
+    EventTarget.enable(exports);
 });
