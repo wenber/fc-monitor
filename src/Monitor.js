@@ -113,7 +113,7 @@ define(function (require) {
     };
 
     /**
-     * 为eventId生成回话流标示sessionId
+     * 为eventId生成会话流标识sessionId
      * @public
      * @param {Event} event 事件对象
      * @return {string} 返回创建的sessionId
