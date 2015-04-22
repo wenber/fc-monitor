@@ -14,6 +14,8 @@ define(function (require) {
 
     var _ = require('underscore');
     var fc = require('fc-core');
+    var ajaxSession = require('fc-ajax/ajaxSession');
+    var logBusiness = require('fc-monitor/business');
 
     /**
      * Monitor 监控类
@@ -108,6 +110,19 @@ define(function (require) {
                 inject(name, ctx, injectMethod);
             }
         });
+    };
+
+    /**
+     * 为eventId生成回话流标示sessionId
+     * @public
+     * @param {Event} event 事件对象
+     * @return {string} 返回创建的sessionId
+     */
+    Monitor.prototype.generateSessionId = function () {
+        var sessionId = ajaxSession.createSessionId();
+        var eventId = logBusiness.createEventId();
+        ajaxSession.session[sessionId] = eventId;
+        return sessionId;
     };
 
     return Monitor;

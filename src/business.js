@@ -1,5 +1,5 @@
 /**
- * @file business.js business of monitor
+ * @file business of monitor
  * @author Ming Liu(liuming07@baidu.com)
  * @date 2015-01-30
  */
