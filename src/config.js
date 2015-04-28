@@ -91,6 +91,5 @@ define(function (require, exports, module) {
             return _.extend(exports, config);
         }
     };
-    return module.exports = exports;
-
+    module.exports = exports;
 });

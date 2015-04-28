@@ -3,7 +3,7 @@
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require, exports, module) {
+define(function (require, exports) {
 
     var _ = require('underscore');
     var logger = require('./logger');
@@ -12,14 +12,25 @@ define(function (require, exports, module) {
     var timeline = require('./performance/timeline');
     var memory = require('fc-storage/memory');
 
+    /**
+     * target前缀，所有性能埋点的target前缀
+     * @type {string}
+     */
     var prefix = config.performanceTargetPrefix;
 
+    /**
+     * 缓存统计项
+     * 标记(mark)过的点先缓存起来
+     * 计算(measure)之后会清除
+     *
+     * @type {Object}
+     */
     var itemMap = {};
 
     /**
      * 计算性能
      * @param {string} itemKey 监控项名
-     * @return {Object} exports 返回模块自身，供链式调用
+     * @return {Object} statis 返回计算后的数据
      */
     exports.measure = function (itemKey) {
         if ('string' !== typeof itemKey) {
@@ -67,7 +78,7 @@ define(function (require, exports, module) {
             ),
             prefix + itemKey
         );
-        return exports;
+        return statis;
     };
 
     /**
@@ -95,9 +106,4 @@ define(function (require, exports, module) {
         window.performance.mark(markName);
         return exports;
     };
-
-    exports.init = function () {
-    };
-
-    return module.exports = exports;
 });

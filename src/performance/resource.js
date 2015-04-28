@@ -32,7 +32,7 @@ define(function (require, exports, module) {
                     switch (type) {
                         case '[object RegExp]':
                             return patt.test(resource.name);
-                        case '[object string]':
+                        case '[object String]':
                             return patt === resource.name;
                         default:
                             return false;

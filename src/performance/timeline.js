@@ -1,11 +1,11 @@
 /**
  * Copyright (C) 2014 All rights reserved.
  *
- * @file timeline.js timeline性能埋点
- * @author Pride Leong<lykling.lyk@gmail.com>
+ * @file timeline.js timeline性能埋点计算
+ * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require, exports, module) {
+define(function (require, exports) {
 
     var _ = require('underscore');
     var util = require('../util');
@@ -41,5 +41,4 @@ define(function (require, exports, module) {
         }).value();
         return measureList;
     };
-    return ;
 });
