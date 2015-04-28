@@ -29,6 +29,16 @@ define(function (require, exports, module) {
         threshold: 20,
 
         /**
+         * 跨域iframe池大小
+         */
+        logFramePoolSize: 10,
+
+        /**
+         * 等待时间
+         */
+        logFramePoolWaittingTime: 1000,
+
+        /**
          * Item key of storage
          * @type {string}
          */

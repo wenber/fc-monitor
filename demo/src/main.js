@@ -43,6 +43,7 @@ define(function (require, exports, module) {
     window.performance.mark('performance_static_er_inited');
 
     config.config({
+        loghost: 'http://localhost/logger.gif',
         resourceWatchingList: [
             /(src|asset)\/.*(initer|main).*\.js/g
         ],

@@ -19,6 +19,7 @@ define(function (require, exports) {
 
     var config = require('./config');
     var globalData = require('./globalData');
+    var logFramePool = require('./logFramePool');
     var localStorage = require('fc-storage/localStorage');
     var EventTarget = require('mini-event/EventTarget');
 
@@ -38,12 +39,6 @@ define(function (require, exports) {
      * @type {Array.<Object>}
      */
     var queue = [];
-
-    /**
-     * 发送日志的iframe的id
-     * @type {string}
-     */
-    var logFrameId = 'log-submit-frame';
 
     /**
      * 进行一次监控
@@ -151,36 +146,10 @@ define(function (require, exports) {
      * @param {Object} params 请求参数
      */
     exports.send = function (path, params) {
-        var ifr = document.getElementById(logFrameId);
-        if (!ifr) {
-            ifr = document.createElement('iframe');
-            ifr.id = logFrameId;
-            ifr.style.display = 'none';
-            ifr.onload = function () {
-                exports.fire('logsended');
-            };
-        }
-        var ifrw = null;
-        var ifrd = null;
-        try {
-            document.getElementsByTagName('body')[0].appendChild(ifr);
-            ifrw = ifr.contentWindow || ifr;
-            ifrd = ifrw.document;
-        }
-        catch (e) {}
-        var form = ifrd.createElement('form');
-        form.action = path;
-        form.method = 'POST';
-        _.each(params, function (value, key) {
-            var val = JSON.stringify(value);
-            var input = ifrd.createElement('input');
-            input.type = 'hidden';
-            input.name = key;
-            input.value = encodeURIComponent(val);
-            form.appendChild(input);
+        logFramePool.getInstance().then(function (frame) {
+            frame.send(path, params);
+            logFramePool.releaseInstance(frame);
         });
-        ifrd.getElementsByTagName('body')[0].appendChild(form);
-        form.submit();
     };
 
     EventTarget.enable(exports);
