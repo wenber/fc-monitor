@@ -33,8 +33,8 @@
             "fc-storage": "0.x",
             "mini-event": "1.x",
             "promise": "1.x",
-            "underscore": "1.x",
-            "usertiming": "0.x"
+            "underscore": "~1.6.0",
+            "usertiming": "~0.1.6"
         }
     }
 }

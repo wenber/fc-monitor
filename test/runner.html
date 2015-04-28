@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="author" content="liangjinping" />
+        <title>fc-monitor test</title>
+        <link rel="stylesheet" href="../dep/jasmine/jasmine.css" />
+        <script src="../dep/jasmine/jasmine.js"></script>
+        <script src="../dep/jasmine/jasmine-html.js"></script>
+        <script src="../dep/jasmine/boot.js"></script>
+        <script src="../dep/jasmine/matchers.js"></script>
+        <script src="../dep/jasmine/jasmine-ajax.js"></script>
+        <script type="text/javascript" src="../dep/usertiming/0.1.6/dist/usertiming.min.js"></script>
+
+        <script src="http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-6/esl.js"></script>
+        <script src="http://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
+        <script>
+        window.DEBUG = true;
+        require.config({
+            'baseUrl': 'src',
+            'paths': {},
+            'packages': [
+                {
+                    'name': 'eoo',
+                    'location': '../../dep/eoo/0.1.1/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'etpl',
+                    'location': '../../dep/etpl/3.0.0/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'fc-storage',
+                    'location': '../../dep/fc-storage/0.0.1-alpha.6/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'fc-core',
+                    'location': '../../dep/fc-core/0.0.1-alpha.7/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'mini-event',
+                    'location': '../../dep/mini-event/1.0.2/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'promise',
+                    'location': '../../dep/promise/1.0.2/src',
+                    'main': 'main'
+                },
+                {
+                    'name': 'underscore',
+                    'location': '../../dep/underscore/1.6.0/src',
+                    'main': 'underscore'
+                },
+                {
+                    'name': 'fc-monitor',
+                    'location': '../../src',
+                    'main': 'main'
+                }
+            ]
+        });
+
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 200;
+        require(
+            [
+                'spec/performance.spec'
+            ],
+            function () {
+                htmlReporter.initialize();
+                jasmine.getEnv().execute();
+            }
+        );
+        </script>
+    </head>
+
+    <body>
+    </body>
+</html>
