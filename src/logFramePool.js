@@ -2,6 +2,12 @@
  * Copyright (C) 2015 All rights reserved.
  *
  * @file logFramePool logFrame池
+ * @description 用于跨域发送日志的iframe池
+ *     提供以下方法
+ *     - getInstance        exports.getInstance()
+ *         获取实例，返回值为Promise对象
+ *     - releaseInstance    exports.releaseInstance()
+ *         释放实例
  * @author Pride Leong<lykling.lyk@gmail.com>
  */
 
@@ -27,6 +33,7 @@ define(function (require, exports, module) {
     /**
      * iframe加载完之后的处理方法
      * 会重置iframe的src保证iframe当前是同域的
+     * @event logsended
      */
     function onLoadHandler() {
         var me = this;
