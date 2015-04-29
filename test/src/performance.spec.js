@@ -36,21 +36,21 @@ define(function (require, exports, module) {
 
         it('产成日志成功', function () {
             logger.log({}, 'test1');
-            expect(logger._debugLogData()[0].target).toBe('test1');
+            expect(logger._debugLogData().custom[0].target).toBe('test1');
             logger.log({target: 'test2'});
-            expect(logger._debugLogData()[1].target).toBe('test2');
-            expect(logger._debugLogData().length).toBe(2);
+            expect(logger._debugLogData().custom[1].target).toBe('test2');
+            expect(logger._debugLogData().custom.length).toBe(2);
         });
 
         it('日志成功发送到日志主机', function () {
             var before = window.performance.getEntriesByType('resource');
             logger.log({});
-            expect(logger._debugLogData().length).toBe(3);
+            expect(logger._debugLogData().custom.length).toBe(3);
             logger.dump();
             var after = window.performance.getEntriesByType('resource');
             // 发送会有延迟，所以dump前后的PerformanceResource数目理应相同
             expect(before.length).toBe(after.length);
-            expect(logger._debugLogData().length).toBe(0);
+            expect(logger._debugLogData().custom.length).toBe(0);
         });
 
         config.config({
@@ -70,7 +70,7 @@ define(function (require, exports, module) {
             logger.log({});
             logger.dump();
             expect(method).toBe('console');
-            expect(logger._debugLogData().length).toBe(0);
+            expect(logger._debugLogData().custom.length).toBe(0);
 
         });
     });
@@ -94,7 +94,7 @@ define(function (require, exports, module) {
             // 计算中产生的PerformanceMeasure会自行清理
             expect(window.performance.getEntriesByType('measure').length).toBe(0);
             // 计算之后会产生一个log
-            expect(logger._debugLogData().length).toBe(1);
+            expect(logger._debugLogData().custom.length).toBe(1);
         });
 
         // 测试能否同时处理多个不同的指标target
