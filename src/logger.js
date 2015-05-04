@@ -15,7 +15,6 @@ define(function (require, exports) {
     'use strict';
 
     var _ = require('underscore');
-    var fc = require('fc-core');
 
     var config = require('./config');
     var globalData = require('./globalData');
@@ -47,9 +46,10 @@ define(function (require, exports) {
      * 进行一次监控
      * @param {Object} data 要监控的数据
      * @param {string=} target 可选的监控数据的target字段，会覆盖data中的target
+     * @return {logger}
      */
     exports.log = function (data, target) {
-        exports.logWithType(data, 'custom', target);
+        return exports.logWithType(data, 'custom', target);
     };
 
     /**
@@ -57,6 +57,7 @@ define(function (require, exports) {
      * @param {Object} data 要监控的数据
      * @param {string} type 日志类型
      * @param {string=} target 可选的监控数据的target字段，会覆盖data中的target
+     * @return {logger}
      */
     exports.logWithType = function (data, type, target) {
         var logInfo = _.deepExtend({timestamp: +(new Date())}, data);
@@ -90,11 +91,10 @@ define(function (require, exports) {
         logInfo.logVersion = config.logVersion;
 
         queue.push(logInfo);
-        if (queue.length >= config[type].threshold) {
-            fc.setImmediate(function () {
-                exports.dump();
-            });
+        if (queue.length >= (config[type].threshold || config.threshold)) {
+            exports.dump({type: type});
         }
+        return exports;
     };
 
     /**
@@ -118,6 +118,7 @@ define(function (require, exports) {
      *     'debug': dump debug日志
      *     'performance': dump performance日志
      *     'trace': dump trace日志
+     * @return {logger};
      */
     exports.dump = function (options) {
         options = options || {};
@@ -130,7 +131,16 @@ define(function (require, exports) {
             }
             method = method || options.method;
             method = method || config[type].defaultMethod || config.defaultMethod;
-            var queue = queueCache[type];
+            var queue = storage.getQueue(type);
+            // 从storage中取出前一次没有发送的log
+            if (queue && queue.length) {
+                queue = queue.concat(queueCache[type]);
+                queueCache[type] = queue;
+                storage.updateQueue(type, []);
+            }
+            else {
+                queue = queueCache[type];
+            }
             if (_.isFunction(exports.dumpMethod[method])
                 && queue && queue.length) {
                 exports.dumpMethod[method](_.extend({
@@ -146,6 +156,7 @@ define(function (require, exports) {
                 exports.dump(_.defaults({type: type}, options));
             });
         }
+        return exports;
     };
 
     /**
@@ -183,15 +194,16 @@ define(function (require, exports) {
      * @param {Object} params 请求参数
      */
     exports.send = function (path, params) {
+        params = _.deepClone(params);
         logFramePool.getInstance().then(function (frame) {
             frame.once('logsended', function () {
                 exports.fire('logsended', {
                     path: path,
                     params: params
                 });
+                logFramePool.releaseInstance(frame);
             });
             frame.send(path, params);
-            logFramePool.releaseInstance(frame);
         });
     };
 

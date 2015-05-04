@@ -74,4 +74,13 @@ define(function (require, exports, module) {
         wrap[type] = queue;
         exports.update('queue', wrap);
     };
+
+    /**
+     * 初始化
+     */
+    exports.init = function () {
+        var item = localStorage.getItem(config.storageKey) || {};
+        var key = getKey();
+        _.deepExtend(cache, item[key]);
+    };
 });

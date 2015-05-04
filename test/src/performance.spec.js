@@ -6,6 +6,7 @@
  */
 
 define(function (require, exports, module) {
+    /* eslint-disable max-nested-callbacks */
     var logger = require('fc-monitor/logger');
     var performance = require('fc-monitor/performance');
     var timeline = require('fc-monitor/performance/timeline');
@@ -14,20 +15,36 @@ define(function (require, exports, module) {
     describe('日志发送生成与发送测试', function () {
         var config = require('fc-monitor/config');
         var recorder = require('fc-monitor/recorder');
-        // 初始化记录器
-        recorder.init({
-            userid: 2333333,
-            optid: 2333333
+
+        var originalTimeout;
+        beforeEach(function () {
+            // 初始化记录器
+            recorder.init({
+                userid: 2333333,
+                optid: 2333333
+            });
+            // 监控配置
+            config.config({
+                threshold: 10,
+                logVersion: '3.0',
+                loghost: '/logger.gif',
+                defaultMethod: 'loghost'
+            });
+            originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+            jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
         });
-        // 监控配置
-        config.config({
-            threshold: 10,
-            logVersion: '3.0',
-            loghost: '/logger.gif',
-            defaultMethod: 'loghost'
+
+        afterEach(function () {
+            jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
         });
 
         it('监控配置成功', function () {
+            config.config({
+                threshold: 10,
+                logVersion: '3.0',
+                loghost: '/logger.gif',
+                defaultMethod: 'console'
+            });
             expect(config.logVersion).toBe('3.0');
             expect(config.threshold).toBe(10);
             expect(config.loghost).toBe('/logger.gif');
@@ -42,34 +59,35 @@ define(function (require, exports, module) {
             expect(logger._debugLogData().custom.length).toBe(2);
         });
 
-        it('日志成功发送到日志主机', function () {
-            var before = window.performance.getEntriesByType('resource');
+        it('日志成功发送到日志主机', function (done) {
             logger.log({});
             expect(logger._debugLogData().custom.length).toBe(3);
             logger.dump();
-            var after = window.performance.getEntriesByType('resource');
-            // 发送会有延迟，所以dump前后的PerformanceResource数目理应相同
-            expect(before.length).toBe(after.length);
+            logger.once('logsended', function () {
+                done();
+            });
             expect(logger._debugLogData().custom.length).toBe(0);
         });
 
-        config.config({
-            defaultMethod: 'console'
-        });
         it('修改监控配置', function () {
+            config.config({
+                defaultMethod: 'console'
+            });
             expect(config.defaultMethod).toBe('console');
         });
 
-        var method = '';
-        var setMethod = _.once(function () {
-            method = 'console';
-        });
         it('日志输出到控制台成功', function () {
 
-            fc.aop.before(logger.dumpMethod, 'console', setMethod);
+            config.config({
+                defaultMethod: 'console'
+            });
+            var check = false;
+            fc.aop.before(logger.dumpMethod, 'console', function () {
+                check = true;
+            });
             logger.log({});
             logger.dump();
-            expect(method).toBe('console');
+            expect(check).toBe(true);
             expect(logger._debugLogData().custom.length).toBe(0);
 
         });
@@ -112,8 +130,16 @@ define(function (require, exports, module) {
 
     describe('timeline计算测试', function () {
         var list = ['a', 'b', 'c', 'd'];
-        _.each(list, function (name) {
-            window.performance.mark(name);
+        beforeEach(function () {
+            window.performance.clearMarks();
+            window.performance.clearMeasures();
+            _.each(list, function (name) {
+                window.performance.mark(name);
+            });
+        });
+        afterEach(function () {
+            window.performance.clearMarks();
+            window.performance.clearMeasures();
         });
         it('计算完成', function () {
             var measureList = timeline.measure(list);
