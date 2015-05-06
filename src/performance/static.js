@@ -64,6 +64,10 @@ define(function (require, exports, module) {
                     : window.performance.timing
             );
         }
+        if (recorder.pageInactived) {
+            toSend.pageInactived = recorder.pageInactived;
+            toSend.inactivedDuration = recorder.inactivedDuration;
+        }
 
         logger.log(toSend, target);
 

@@ -62,7 +62,7 @@ define(function (require, exports, module) {
         var item = memory.getItem(config.storageKey);
         var staticItem = item && item.performance && item.performance.static;
         var staticData = staticItem && staticItem.data;
-        logger.log({
+        var toSend = {
             target: 'performance_resource_cached',
             isCached: isCached,
             performanceId: config.performanceId,
@@ -70,12 +70,12 @@ define(function (require, exports, module) {
             browserData: browser.getBrowserData(),
             staticData: staticData.log,
             pageStabled: recorder.stable ? 1 : 0
-            // TODO(liangjinping@baidu.com) 将下面的数据放到业务收集发送
-            // clientTime: moment(new Date()).format('YYYY-MM-DD HH:mm:ss,SSS'),
-            // serverTime: moment(require('../context/envData').getItem(
-            //     'userInfo'
-            // ).serverTime * 1000).format('YYYY-MM-DD HH:mm:ss,SSS'),
-        });
+        };
+        if (recorder.pageInactived) {
+            toSend.pageInactived = recorder.pageInactived;
+            toSend.inactivedDuration = recorder.inactivedDuration;
+        }
+        logger.log(toSend);
         return exports;
     };
 

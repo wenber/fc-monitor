@@ -1,5 +1,11 @@
 /**
  * @file recorder.js 记录器，记录用户的特殊行为
+ * @description
+ *     提供以下方法
+ *     - init: function (context) {}
+ *         初始化，并将context数据存到globalData中
+ *     - reset: function () {}
+ *         重置记录器（不清除globalData信息）
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
@@ -112,8 +118,8 @@ define(function (require) {
         window.performance.mark('enter_tab');
         try {
             window.performance.measure('page_inactived', 'leave_tab', 'enter_tab');
-            var measure = util.getEntry('page_inactived');
-            recorder.inactivedDuration.push(measure.duration);
+            var entry = util.getEntry('page_inactived');
+            recorder.inactivedDuration.push(entry.duration);
         }
         catch (err) {}
         window.performance.clearMeasures('page_inactived');
@@ -128,11 +134,11 @@ define(function (require) {
     function tabSwitchHandler(e) {
         try {
             if ((tabSwitchOpts.hidden && document[tabSwitchOpts.hidden])
-                || e.type === 'focusin') {
+                || e.type === 'focusout') {
                 mark();
             }
             else if ((tabSwitchOpts.hidden && !document[tabSwitchOpts.hidden])
-                || e.type === 'focusout') {
+                || e.type === 'focusin') {
                 measure();
             }
         }
@@ -140,17 +146,24 @@ define(function (require) {
     }
 
     /**
-     * 初始化，更新全局信息
+     * 初始化，更新全局信息，一般只初始化一次
      * @param {Object} context 上下文信息，用户信息
+     * @param {Object} options 选项
+     * @property {boolean} options.force 强制初始化
      * @return {Object} recorder
      */
-    recorder.init = function (context) {
+    recorder.init = function (context, options) {
+        if (this.inited && !options.force) {
+            return;
+        }
         if (context) {
             recorder.updateGlobalData(context);
             memory.updateItem(config.storageKey, {
                 context: context
             });
         }
+        require('./storage').init();
+        unbindTabSwitchEvent();
         listenTabSwitchEvent();
         return recorder;
     };
