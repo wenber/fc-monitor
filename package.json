@@ -1,6 +1,6 @@
 {
     "name": "fc-monitor",
-    "version": "0.0.1-alpha.7",
+    "version": "0.0.1-beta.1",
     "maintainers": [
         {
             "name": "Leo Wang",
@@ -14,7 +14,9 @@
     "contributors": [],
     "dependencies": {
         "fc-core": "0.x",
-        "fc-storage": "0.x"
+        "fc-storage": "0.x",
+        "mini-event": "1.x",
+        "underscore": "~1.6.0"
     },
     "main": "main",
     "description": "FC monitor封装库",
@@ -36,5 +38,8 @@
             "underscore": "~1.6.0",
             "usertiming": "~0.1.6"
         }
-    }
+    },
+    "author": "Pride Leong<lykling.lyk@gmail.com>",
+    "license": "BSD",
+    "readme": "README"
 }
