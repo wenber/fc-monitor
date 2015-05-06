@@ -4,6 +4,7 @@
  * @file main.js
  * @author Pride Leong<lykling.lyk@gmail.com>
  */
+/* eslint-env node */
 
 window.performance.mark('performance_static_js_sync_loaded');
 
@@ -14,7 +15,7 @@ define(function (require, exports, module) {
     var fc = require('fc-core');
     var context = {
         userid: 39,
-        optis: 39,
+        optid: 39,
         ulevelid: 39,
         token: 'ncl20c2ijk'
     };
@@ -42,6 +43,7 @@ define(function (require, exports, module) {
     window.performance.mark('performance_static_er_inited');
 
     config.config({
+        loghost: 'http://localhost/logger.gif',
         resourceWatchingList: [
             /(src|asset)\/.*(initer|main).*\.js/g
         ],
@@ -57,10 +59,23 @@ define(function (require, exports, module) {
         require('fc-monitor/performance').mark(itemKey, 'data_loaded');
         require('fc-monitor/performance').mark(itemKey, 'view_rendered');
         require('fc-monitor/performance').mark(itemKey, 'finish').measure(itemKey);
+        console.log(require('fc-monitor/performance/timeline').measure(staticMarks));
         fc.setImmediate(function () {
             logger.dump({method: 'console'});
         });
     }, 1000);
+
+    require('fc-monitor/performance').mark('a');
+    require('fc-monitor/performance').mark('a');
+    require('fc-monitor/performance').mark('a');
+    require('fc-monitor/performance').measure('a');
+    logger.dump({method: 'loghost'});
+    var body = document.getElementsByTagName('body')[0];
+    var span = document.createElement('span');
+    span.innerHTML = 'OK';
+    span.style.color = '#DB1616';
+    body.appendChild(span);
+
 });
 
 require(['main']);

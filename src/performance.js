@@ -1,9 +1,15 @@
 /**
  * @file performance.js
+ * @description 提供性能监控的常用方法
+ *     提供以下方法:
+ *     - mark: function (itemKey, process) {}
+ *         针对统计项${itemKey}，标记一个点
+ *     - measure: function (itemKey) {}
+ *         根据已有的对${itemKey}的标记，计算统计项${itemKey}的性能
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require, exports, module) {
+define(function (require, exports) {
 
     var _ = require('underscore');
     var logger = require('./logger');
@@ -12,14 +18,25 @@ define(function (require, exports, module) {
     var timeline = require('./performance/timeline');
     var memory = require('fc-storage/memory');
 
+    /**
+     * target前缀，所有性能埋点的target前缀
+     * @type {string}
+     */
     var prefix = config.performanceTargetPrefix;
 
+    /**
+     * 缓存统计项
+     * 标记(mark)过的点先缓存起来
+     * 计算(measure)之后会清除
+     *
+     * @type {Object}
+     */
     var itemMap = {};
 
     /**
      * 计算性能
      * @param {string} itemKey 监控项名
-     * @return {Object} exports 返回模块自身，供链式调用
+     * @return {Object} statis 返回计算后的数据
      */
     exports.measure = function (itemKey) {
         if ('string' !== typeof itemKey) {
@@ -56,25 +73,31 @@ define(function (require, exports, module) {
         // clear cached mark info
         delete itemMap[itemKey];
 
+        var toSend = _.extend(
+            {
+                performanceId: config.performanceId,
+                pageStabled: recorder.stable ? 1 : 0
+            },
+            performanceData
+        );
+
+        if (recorder.pageInactived) {
+            toSend.pageInactived = recorder.pageInactived;
+            toSend.inactivedDuration = recorder.inactivedDuration;
+        }
+
         // send performance log
         logger.log(
-            _.extend(
-                {
-                    performanceId: config.performanceId,
-                    pageStabled: recorder.stable ? 1 : 0
-                },
-                performanceData
-            ),
+            toSend,
             prefix + itemKey
         );
-        return exports;
+        return statis;
     };
 
     /**
      * 性能埋点
      * @param {string} itemKey 监控项名
-     * @param {string} process 进度名
-     *  为finish时表示该流程结束，开始计算性能
+     * @param {string} process 进度别名，如果不传则使用'process'
      * @return {Object} exports 返回模块自身，供链式调用
      */
     exports.mark = function (itemKey, process) {
@@ -89,15 +112,11 @@ define(function (require, exports, module) {
             || '' === process) {
             process = 'process';
         }
+        // 加上当前长度作为后缀，保证新增markName不与已有重复
         process += '_' + item.process.length;
         item.process.push(process);
         var markName = prefix + itemKey + '_' + process;
         window.performance.mark(markName);
         return exports;
     };
-
-    exports.init = function () {
-    };
-
-    return module.exports = exports;
 });

@@ -1,9 +1,15 @@
 /**
  * @file recorder.js 记录器，记录用户的特殊行为
+ * @description
+ *     提供以下方法
+ *     - init: function (context) {}
+ *         初始化，并将context数据存到globalData中
+ *     - reset: function () {}
+ *         重置记录器（不清除globalData信息）
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require, exports, module) {
+define(function (require) {
     'use strict';
 
     var _ = require('underscore');
@@ -81,6 +87,9 @@ define(function (require, exports, module) {
         tabSwitchHandler({});
     }
 
+    /**
+     * 解绑事件
+     */
     function unbindTabSwitchEvent() {
         var eventTypeList = tabSwitchOpts.eventTypeList;
         _.each(eventTypeList, function (type) {
@@ -94,16 +103,25 @@ define(function (require, exports, module) {
         });
     }
 
+    /**
+     * 离开页面，标记加1
+     */
     function mark() {
         recorder.pageInactived += 1;
         window.performance.mark('leave_tab');
     }
 
+    /**
+     * 计算离开页面的时间
+     */
     function measure() {
         window.performance.mark('enter_tab');
-        window.performance.measure('page_inactived', 'leave_tab', 'enter_tab');
-        var measure = util.getEntry('page_inactived');
-        recorder.inactivedDuration.push(measure.duration);
+        try {
+            window.performance.measure('page_inactived', 'leave_tab', 'enter_tab');
+            var entry = util.getEntry('page_inactived');
+            recorder.inactivedDuration.push(entry.duration);
+        }
+        catch (err) {}
         window.performance.clearMeasures('page_inactived');
         window.performance.clearMarks('leave_tab');
         window.performance.clearMarks('enter_tab');
@@ -116,11 +134,11 @@ define(function (require, exports, module) {
     function tabSwitchHandler(e) {
         try {
             if ((tabSwitchOpts.hidden && document[tabSwitchOpts.hidden])
-                || e.type === 'focusin') {
+                || e.type === 'focusout') {
                 mark();
             }
             else if ((tabSwitchOpts.hidden && !document[tabSwitchOpts.hidden])
-                || e.type === 'focusout') {
+                || e.type === 'focusin') {
                 measure();
             }
         }
@@ -128,17 +146,24 @@ define(function (require, exports, module) {
     }
 
     /**
-     * 更新全局信息
+     * 初始化，更新全局信息，一般只初始化一次
      * @param {Object} context 上下文信息，用户信息
+     * @param {Object} options 选项
+     * @property {boolean} options.force 强制初始化
      * @return {Object} recorder
      */
-    recorder.init = function (context) {
+    recorder.init = function (context, options) {
+        if (this.inited && !options.force) {
+            return;
+        }
         if (context) {
             recorder.updateGlobalData(context);
             memory.updateItem(config.storageKey, {
                 context: context
             });
         }
+        require('./storage').init();
+        unbindTabSwitchEvent();
         listenTabSwitchEvent();
         return recorder;
     };

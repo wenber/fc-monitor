@@ -4,6 +4,7 @@
         <meta charset="UTF-8" />
         <meta name="author" content="liangjinping" />
         <title>百度推广</title>
+        <script type="text/javascript" src="../dep/usertiming/0.1.6/dist/usertiming.min.js"></script>
         <script type="text/javascript">
             window.performance.mark('performance_static_html_parse');
         </script>
@@ -14,6 +15,8 @@
              Remove this if you use the .htaccess -->
         <meta http-equiv="X-UA-Compatible" content="IE=edge, chrome=1">
         <link rel="shortcut icon" type="image/ico" href="src/resource/img/favicon.ico" />
+        <script src="http://s1.bdstatic.com/r/www/cache/ecom/esl/1-8-6/esl.js"></script>
+        <script src="http://libs.baidu.com/jquery/1.10.2/jquery.min.js"></script>
         <script type="text/javascript">
             window.performance.mark('performance_static_css_loaded');
         </script>
@@ -47,7 +50,7 @@
                     },
                     {
                         'name': 'promise',
-                        'location': '../../dep/promise/1.0.0/src',
+                        'location': '../../dep/promise/1.0.2/src',
                         'main': 'main'
                     },
                     {
@@ -64,6 +67,11 @@
                         'name': 'underscore',
                         'location': '../../dep/underscore/1.6.0/src',
                         'main': 'underscore'
+                    },
+                    {
+                        'name': 'fc-ajax',
+                        'location': '../../dep/fc-ajax/0.0.1-alpha.8/src',
+                        'main': 'main'
                     }
                 ],
                 'paths': {}
