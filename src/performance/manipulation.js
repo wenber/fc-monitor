@@ -1,116 +1,34 @@
 /**
- * @file The perforance of material manipulation
+ * @file manipulation.js
+ * @description 提供性能监控的常用方法
+ *     提供以下方法:
+ *     - mark: function (itemKey, process) {}
+ *         针对统计项${itemKey}，标记一个点
+ *     - measure: function (itemKey) {}
+ *         根据已有的对${itemKey}的标记，计算统计项${itemKey}的性能
  * @author Pride Leong(liangjinping@baidu.com)
  */
 
-define(function (require, exports, module) {
-    var logger = require('../logger');
-    var util = require('../util');
+define(function (require, exports) {
+    var core = require('./core');
+    var config = require('../config');
 
     /**
-     * Map for eventId-target
+     * 计算性能，用于非首页
+     * @param {string} itemKey 监控项名
+     * @return {Function}
      */
-    var manipulationEvent = {};
-
-    /**
-     * Prefix of log target
-     * @const
-     * @type {string}
-     */
-    var logPrefix = 'performance_';
-
-    /**
-     * Start suffix of performance mark point
-     * @const
-     * @type {string}
-     */
-    var startSuffix = '_start';
-
-    /**
-     * Finish suffix of performance mark point
-     * @const
-     * @type {string}
-     */
-    var finishSuffix = '_finish';
-
-    /**
-     * Mark a start point for synchronous manipulation.
-     * @param {string} eventId
-     *     manipulation eventId.
-     * @param {string=} optTarget
-     *     manipulation target.
-     */
-    exports.syncMarkStart = function (eventId, optTarget) {
-        if ('string' === typeof eventId && eventId.length) {
-            var startTag = eventId + startSuffix;
-            window.performance.mark(startTag);
-            if ('string' === typeof optTarget && optTarget.length) {
-                var mark = util.getEntry(startTag);
-                manipulationEvent[eventId] = {
-                    target: optTarget,
-                    marks: [mark]
-                };
-                var logData =  {
-                    target: logPrefix + optTarget,
-                    eventId: eventId
-                };
-                logData[logPrefix + optTarget + '_start'] = mark.duration;
-                manipulationEvent[eventId].logData = logData;
-            }
-        }
+    exports.measure = function (itemKey) {
+        return core.measure(itemKey, [], 'manipulation');
     };
 
     /**
-     * Mark a start point for asynchronous manipulation.
-     * @param {string} eventId
-     *     manipulation eventId.
-     * @param {string=} optTarget
-     *     manipulation target.
+     * 性能埋点
+     * @param {string} itemKey 监控项名
+     * @param {string} process 进度别名，如果不传则使用'process'
+     * @return {Function}
      */
-    exports.asyncMarkStart = function (eventId, optTarget) {};
-
-    /**
-     * Measure the synchronous performance of material manipulation
-     * @param {string} eventId
-     *     manipulation eventId.
-     * @param {string} markName
-     *     mark name.
-     */
-    exports.syncMeasure = function (eventId, markName) {
-        markName = markName ? markName : '';
-        var startTag = eventId + startSuffix;
-        if ('string' === typeof eventId && manipulationEvent[eventId]) {
-            var finishTag;
-            if (markName === 'finish') {
-                finishTag = eventId + finishSuffix;
-            }
-            else {
-                finishTag = eventId + '_' + markName;
-            }
-            window.performance.mark(finishTag);
-            var mark = util.getEntry(finishTag);
-            var marks = manipulationEvent[eventId].marks;
-            marks.push(mark);
-
-            window.performance.measure(eventId, startTag, finishTag);
-
-            var measure = util.getEntry(eventId);
-            var duration = measure.duration;
-            var target = logPrefix + manipulationEvent[eventId].target;
-            var logData = manipulationEvent[eventId].logData;
-            var markKey = target + '_' + markName + '_spent';
-            logData[markKey] = duration;
-            if (markName === 'finish') {
-                logData[target] = duration;
-                logger.log(logData);
-                window.performance.clearMarks(startTag);
-                window.performance.clearMarks(finishTag);
-                window.performance.clearMeasures(eventId);
-                delete manipulationEvent[eventId];
-            }
-        }
-        else {
-            window.performance.clearMarks(startTag);
-        }
-    };
+    exports.mark = function (itemKey, process) {
+        return core.mark(itemKey, process, 'manipulation');
+    }
 });
