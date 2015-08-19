@@ -105,11 +105,12 @@ define(function (require) {
     Monitor.prototype.watch = function (Clazz) {
         var ctx = Clazz.prototype || Clazz;
         var conf = this.injectConf || {};
-        _.each(conf, function (injectMethod, name) {
+        // 这里使用for in来遍历conf,因为for in会遍历原型链上的成员，_.each只会遍历自身成员
+        for (var name in conf) {
             if (conf[name] && _.isFunction(ctx[name])) {
-                inject(name, ctx, injectMethod);
+                inject(name, ctx, conf[name]);
             }
-        });
+        }
     };
 
     /**
